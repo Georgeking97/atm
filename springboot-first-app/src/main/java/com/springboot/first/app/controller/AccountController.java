@@ -34,7 +34,7 @@ public class AccountController {
             case "Unfortunately the ATM doesn't have the required notes for that withdrawal" :
                 return new ResponseEntity<>(result, HttpStatus.NOT_ACCEPTABLE);
             default:
-                return new ResponseEntity<>(result, HttpStatus.ACCEPTED);
+                return new ResponseEntity<>(result, HttpStatus.OK);
         }
     }
 
@@ -48,7 +48,7 @@ public class AccountController {
             case -2:
                 return new ResponseEntity<>("No accounts currently exist in our system", HttpStatus.NO_CONTENT);
             default:
-                return new ResponseEntity<>("Your balance is: " + result, HttpStatus.ACCEPTED);
+                return new ResponseEntity<>("Your balance is: " + result, HttpStatus.OK);
         }
     }
 }
