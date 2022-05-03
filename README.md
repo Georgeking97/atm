@@ -1,6 +1,5 @@
 # atm
-In order to start this spring boot application you can navigate to src/main/java/com/springboot/first/app/controller/SpringbootFirstAppApplication.java.
-Within this class if you run the main method the spring boot application will start.
+In order to start this spring boot application you can run the following command: mvn spring-boot:run
 
 To initalise the ATM and set it's available balance and notes you can send the following request:
 GET localhost:8080/account/
