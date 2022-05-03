@@ -25,7 +25,7 @@ public class AccountServiceTest {
     public void TestForCheckingUserBalanceWithWrongPin() {
         AccountService accountService = new AccountService();
         accountService.totalBalance();
-        assertEquals(1, accountService.userBalance(1111));
+        assertEquals(-1, accountService.userBalance(1111));
     }
 
     @Test

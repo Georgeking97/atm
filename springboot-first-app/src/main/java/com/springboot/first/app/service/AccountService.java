@@ -11,8 +11,8 @@ import java.util.HashMap;
 public class AccountService {
     private final ATM atm = new ATM(0, 10, 30, 30, 20);
     private final HashMap<Integer, Account> accounts = new HashMap<Integer, Account>() {{
-        accounts.put(1234, new Account(123456789, 1234, 800, true, 200));
-        accounts.put(4321, new Account(987654321, 4321, 1230, true, 150));
+        put(1234, new Account(123456789, 1234, 800, true, 200));
+        put(4321, new Account(987654321, 4321, 1230, true, 150));
     }};
 
     public String withdraw(Withdraw withdraw) {
