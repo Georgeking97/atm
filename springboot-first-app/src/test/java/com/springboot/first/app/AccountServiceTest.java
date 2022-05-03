@@ -3,11 +3,13 @@ package com.springboot.first.app;
 import com.springboot.first.app.model.Withdraw;
 import com.springboot.first.app.service.AccountService;
 import org.junit.jupiter.api.*;
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
+@SpringBootConfiguration
 public class AccountServiceTest {
     // You can't currently run the tests all together, they have to be run in isolation
     // 92% code coverage of the account service class
@@ -23,7 +25,7 @@ public class AccountServiceTest {
     public void TestForCheckingUserBalanceWithWrongPin() {
         AccountService accountService = new AccountService();
         accountService.totalBalance();
-        assertEquals(1, accountService.userBalance(0234));
+        assertEquals(1, accountService.userBalance(1111));
     }
 
     @Test
@@ -79,7 +81,7 @@ public class AccountServiceTest {
     public void TestForWithdrawingWithWrongPin() {
         AccountService accountService = new AccountService();
         accountService.totalBalance();
-        Withdraw withdraw = new Withdraw(50000, 0000);
+        Withdraw withdraw = new Withdraw(50000, 1111);
         assertEquals("Incorrect pin, please try again", accountService.withdraw(withdraw));
     }
 

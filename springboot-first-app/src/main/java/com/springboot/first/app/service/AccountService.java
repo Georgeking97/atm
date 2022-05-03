@@ -5,55 +5,52 @@ import com.springboot.first.app.model.Account;
 import com.springboot.first.app.model.Withdraw;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 
 @Service
 public class AccountService {
-    private static final ArrayList<Account> accounts = new ArrayList<>(Arrays.asList(new Account(123456789, 1234, 800, true, 200),
-            new Account(987654321, 4321, 1230, true, 150)));
     private final ATM atm = new ATM(0, 10, 30, 30, 20);
+    private final HashMap<Integer, Account> accounts = new HashMap<Integer, Account>() {{
+        accounts.put(1234, new Account(123456789, 1234, 800, true, 200));
+        accounts.put(4321, new Account(987654321, 4321, 1230, true, 150));
+    }};
 
     public String withdraw(Withdraw withdraw) {
-        String result = "";
         int originalFifty = atm.getFifty();
         int originalTwenty = atm.getTwenty();
         int originalTen = atm.getTen();
         int originalFive = atm.getFive();
 
-        if (accounts.size() == 0) {
-            return "No accounts currently exist in our system";
-        }
-
         if (withdraw.getWithdrawAmount() < 0) {
             return "Please provide a valid amount to withdraw";
         }
 
-        for (Account account : accounts) {
-            if (withdraw.getAccountPin() == account.getAccountPin()) {
-                Account currentUser = account;
-                if (withdraw.getWithdrawAmount() <= atm.getTotalBalance()) {
-                    if (withdraw.getWithdrawAmount() <= currentUser.getBalance()) {
-                        if (updateATMBalance(withdraw.getWithdrawAmount())) {
-                            currentUser.setBalance(currentUser.getBalance() - withdraw.getWithdrawAmount());
-                            totalBalance();
-                            StringBuilder stringBuilderResult = printOutOfNotes(originalFifty, originalTwenty, originalTen, originalFive);
-                            result = "Your new balance is: " + currentUser.getBalance() + "\n" + stringBuilderResult;
-                        } else {
-                            result = "Unfortunately the ATM doesn't have the required notes for that withdrawal";
-                        }
-                    } else {
-                        result = overdraft(currentUser, withdraw, originalFifty, originalTwenty, originalTen, originalFive);
-                    }
-                } else {
-                    result = "Unfortunately the ATM doesn't have the required balance for that withdrawal";
-                }
-                break;
-            } else {
-                result = "Incorrect pin, please try again";
-            }
+        if (accounts.size() == 0) {
+            return "No accounts currently exist in our system";
         }
-        return result;
+
+        if (!accounts.containsKey(withdraw.getAccountPin())) {
+            return "Incorrect pin, please try again";
+        }
+
+        if (!(withdraw.getWithdrawAmount() <= atm.getTotalBalance())) {
+            return "Unfortunately the ATM doesn't have the required balance for that withdrawal";
+        }
+
+        Account currentUser = accounts.get(withdraw.getAccountPin());
+
+        if (withdraw.getWithdrawAmount() > currentUser.getBalance()) {
+            return overdraft(currentUser, withdraw, originalFifty, originalTwenty, originalTen, originalFive);
+        }
+
+        if (!updateATMBalance(withdraw.getWithdrawAmount())) {
+            return "Unfortunately the ATM doesn't have the required notes for that withdrawal";
+        }
+
+        currentUser.setBalance(currentUser.getBalance() - withdraw.getWithdrawAmount());
+        totalBalance();
+        StringBuilder stringBuilderResult = printOutOfNotes(originalFifty, originalTwenty, originalTen, originalFive);
+        return  "Your new balance is: " + currentUser.getBalance() + "\n" + stringBuilderResult;
     }
 
     public String totalBalance() {
@@ -62,51 +59,50 @@ public class AccountService {
     }
 
     public int userBalance(int pin) {
-        int result = 0;
         if (accounts.size() == 0) {
-            result = 2;
+            return -2;
         }
-        for (Account account : accounts) {
-            if (pin == account.getAccountPin()) {
-                return account.getBalance();
-            } else {
-                result = 1;
-            }
+
+        if (accounts.containsKey(pin)) {
+            return accounts.get(pin).getBalance();
+        } else {
+            return -1;
         }
-        return result;
     }
 
     private String overdraft(Account currentUser, Withdraw withdraw, int originalFifty, int originalTwenty, int originalTen, int originalFive) {
-        String result = "";
         int originalAmount = withdraw.getWithdrawAmount();
 
-        if (currentUser.isOverdraftAccess()) {
-            withdraw.setWithdrawAmount(withdraw.getWithdrawAmount() - currentUser.getBalance());
-            currentUser.setBalance(0);
-            if (withdraw.getWithdrawAmount() <= currentUser.getOverdraftBalance()) {
-                if (updateATMBalance(originalAmount)) {
-                    currentUser.setOverdraftBalance(currentUser.getOverdraftBalance() - withdraw.getWithdrawAmount());
-                    totalBalance();
-                    StringBuilder stringBuilderResult = printOutOfNotes(originalFifty, originalTwenty, originalTen, originalFive);
-                    result = "Your new overdraft balance is: " + currentUser.getOverdraftBalance() + "\n" + stringBuilderResult;
-                } else {
-                    result = "Unfortunately the ATM doesn't have the required notes for that withdrawal";
-                }
-            } else {
-                result = "You don't have enough in your overdraft account, your current overdraft balance is: " + currentUser.getOverdraftBalance();
-            }
-        } else {
-            result = "You don't have enough in your current account and you don't have access to an overdraft account";
+        if (!currentUser.isOverdraftAccess()) {
+            return "You don't have enough in your current account and you don't have access to an overdraft account";
         }
-        return result;
+
+        withdraw.setWithdrawAmount(withdraw.getWithdrawAmount() - currentUser.getBalance());
+
+        if (withdraw.getWithdrawAmount() > currentUser.getOverdraftBalance()) {
+            return "You don't have enough in your overdraft account, your current overdraft balance is: " + currentUser.getOverdraftBalance();
+        }
+
+        if (!updateATMBalance(originalAmount)) {
+            return "Unfortunately the ATM doesn't have the required notes for that withdrawal";
+        }
+
+        currentUser.setBalance(0);
+        currentUser.setOverdraftBalance(currentUser.getOverdraftBalance() - withdraw.getWithdrawAmount());
+        totalBalance();
+        StringBuilder stringBuilderResult = printOutOfNotes(originalFifty, originalTwenty, originalTen, originalFive);
+        return "Your new overdraft balance is: " + currentUser.getOverdraftBalance() + "\n" + stringBuilderResult;
     }
 
-    private Boolean updateATMBalance(int requestedAmount) {
-        int tracker = requestedAmount;
+    private Boolean updateATMBalance(int tracker) {
         int fifty = tracker / 50;
         int twenty;
         int ten;
         int five;
+        int originalFifty = atm.getFifty();
+        int originalTwenty = atm.getTwenty();
+        int originalTen = atm.getTen();
+        int originalFive = atm.getFive();
 
         if (fifty >= atm.getFifty() && atm.getFifty() > 0) {
             tracker -= atm.getFifty() * 50;
@@ -148,6 +144,10 @@ public class AccountService {
 
         if (tracker > 0) {
             System.out.println("tracker value: " + tracker);
+            atm.setFifty(originalFifty);
+            atm.setTwenty(originalTwenty);
+            atm.setTen(originalTen);
+            atm.setFive(originalFive);
             return false;
         } else {
             return true;
